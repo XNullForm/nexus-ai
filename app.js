@@ -47,6 +47,7 @@ const toolsTrigger=$('toolsTrigger'),toolsMenu=$('toolsMenu');
 toolsTrigger.onclick=()=>{const open=toolsMenu.hidden;toolsMenu.hidden=!open;toolsTrigger.setAttribute('aria-expanded',String(open))};
 document.addEventListener('click',e=>{if(!e.target.closest('.tools-menu-wrap')){toolsMenu.hidden=true;toolsTrigger.setAttribute('aria-expanded','false')}});
 async function runSelectedTools(promptText){
+ lastToolSources=[];
  const context=[],sources=[];
  if($('webSearchToggle').checked){
   const r=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:promptText})});
@@ -60,7 +61,7 @@ async function runSelectedTools(promptText){
   const target=urls[0].replace(/[),.]+$/,'');
   const r=await fetch('/api/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target})});
   const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not read that webpage.');
-  context.push('READ WEBPAGE: '+d.title+'\\nURL: '+d.url+'\\n'+d.text);
+  context.push('READ WEBPAGE: '+d.title+'\\nURL: '+d.url+'\\n'+d.text.slice(0,6500));
   sources.push({title:d.title,url:d.url});
  }
  lastToolSources=sources;
@@ -94,7 +95,7 @@ $('chatForm').addEventListener('submit',async e=>{
   bubble.textContent=reply;showSources(bubble,lastToolSources);messages.push({role:'assistant',content:reply});saveChat();setStatus('Local model · Ready');
  }catch(err){
   bubble.textContent='NEXUS could not start the local model. '+err.message+'\n\nThe first setup downloads a small model to this browser. Keep this tab open and use a regular Safari tab (not Private Browsing).';
-  setStatus('Local model needs attention');
+  setStatus('Request needs attention');
  }finally{busy=false;$('sendBtn').disabled=false;input.focus()}
 });
 $('readerForm').addEventListener('submit',async e=>{
