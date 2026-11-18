@@ -1,5 +1,5 @@
 // NEXUS server-side model gateway. Never expose HF_TOKEN in frontend code.
-const MODEL="Qwen/Qwen2.5-7B-Instruct-1M";
+const MODEL="Qwen/Qwen3.5-9B";
 module.exports=async function(req,res){
  if(req.method!=="POST")return res.status(405).json({error:"Method not allowed."});
  const token=process.env.HF_TOKEN;
