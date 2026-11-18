@@ -1,29 +1,31 @@
 # NEXUS AI
 
-**Current version: 1.2.0**
+**Current version: 1.3.0**
 
-NEXUS is a browser-based AI workspace. Chat requests are sent to a Vercel serverless route, which calls Hugging Face Inference Providers. The secret token remains server-side.
+NEXUS is a mobile-friendly AI workspace with a compact open model running directly in the browser through WebLLM and WebGPU. No Hugging Face inference credits or cloud API key are required for chat.
 
-## Setup on Vercel
+## Run NEXUS on an iPhone
 
-1. Import this repository into Vercel (or open the existing NEXUS project).
-2. In Hugging Face, open Settings → Access Tokens and create a **fine-grained** token.
-3. Grant the token the permission **Make calls to Inference Providers**. Do not paste the token into chat, GitHub, or frontend files.
-4. In Vercel, open Project → Settings → Environment Variables.
-5. Add a variable named `HF_TOKEN` and paste the token as its value. Select the Production environment (and Preview too if testing preview deployments).
-6. Save, then go to Deployments and redeploy the latest commit so the server function receives the variable.
-7. Open the deployed NEXUS site, refresh, and send a short test message.
+1. Deploy this repository to Vercel (or refresh the existing Vercel deployment after the latest GitHub commit).
+2. Open the deployed HTTPS site in Safari. Use a normal tab, not Private Browsing.
+3. Send a message. On the first chat, NEXUS downloads the Qwen2 0.5B quantized model (roughly a few hundred MB) into browser storage. Keep Safari open while it loads.
+4. Later chats can reuse the cached model. If the browser clears site data, the model may need to download again.
 
-The server uses the chat-completion model `Qwen/Qwen3.5-9B` through Hugging Face's OpenAI-compatible router. The provider is automatically selected; no Featherless provider suffix is forced. Model availability, credits, and any billing requirements depend on Hugging Face and its provider partners. Review current pricing before enabling paid usage. If billing is needed, ask a parent or guardian to help.
+## How it works
+
+- Model: `Qwen2-0.5B-Instruct-q4f16_1-MLC` via the open-source WebLLM engine.
+- Inference runs on the device using WebGPU; prompts are not sent to Hugging Face or another model API for chat.
+- The model is intentionally small. It is useful for basic questions, short writing, and simple experiments, but is much less capable than large hosted assistants.
+- iPhone support depends on the device, Safari version, available memory, and WebGPU support. If the browser reports that WebGPU is unavailable or the tab closes, the device may not be able to run this model reliably.
+- The first model download requires internet. Chat generation after the model is cached can run locally.
 
 ## Included
 
-- Responsive NEXUS 1.2.0 interface with refreshed visual design and mobile navigation
-- Hosted open-model inference through a server-side API route
+- Responsive NEXUS 1.3.0 interface
+- Local in-browser AI chat
 - Local conversation history and library
-- Settings and model selection
-- Public webpage text reader
+- Public webpage text reader (this reader still fetches pages through the Vercel route)
 
 ## Limitations
 
-This is an open-weight model hosted by an inference provider, not a newly trained model or a copy of ChatGPT, Claude, or Gemini. The webpage reader extracts public HTML/text; it is not a full browser and cannot control tabs, sign into websites, or access pages behind a login. Image understanding, voice, web search, user accounts, and cross-device sync are not included yet. Do not use this project to bypass school filters, monitoring, or device-management rules.
+This is an existing open model running locally, not a newly trained model or a copy of ChatGPT, Claude, or Gemini. The compact model can make mistakes and has limited reasoning ability. The webpage reader is separate from local chat and only extracts public page text. Browser automation, image understanding, voice, and cross-device sync are not included. Do not use this project to bypass school filters, monitoring, or device-management rules.
