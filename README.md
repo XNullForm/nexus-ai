@@ -1,4 +1,4 @@
-# NEXUS AI
+# NEXUS AI\n\n**Current version: 1.2.0**
 
 NEXUS is a browser-based AI workspace. Chat requests are sent to a Vercel serverless route, which calls Hugging Face Inference Providers. The secret token remains server-side.
 
@@ -12,11 +12,11 @@ NEXUS is a browser-based AI workspace. Chat requests are sent to a Vercel server
 6. Save, then go to Deployments and redeploy the latest commit so the server function receives the variable.
 7. Open the deployed NEXUS site, refresh, and send a short test message.
 
-The server uses the recommended chat-completion model `Qwen/Qwen2.5-7B-Instruct-1M` through Hugging Face's OpenAI-compatible router. The provider is automatically selected; no Featherless provider suffix is forced. Model availability, credits, and any billing requirements depend on Hugging Face and its provider partners. Review current pricing before enabling paid usage. If billing is needed, ask a parent or guardian to help.
+The server uses the chat-completion model `Qwen/Qwen3.5-9B` through Hugging Face's OpenAI-compatible router. The provider is automatically selected; no Featherless provider suffix is forced. Model availability, credits, and any billing requirements depend on Hugging Face and its provider partners. Review current pricing before enabling paid usage. If billing is needed, ask a parent or guardian to help.
 
 ## Included
 
-- Responsive NEXUS chat interface and mobile navigation
+- Responsive NEXUS 1.2.0 interface with refreshed visual design and mobile navigation
 - Hosted open-model inference through a server-side API route
 - Local conversation history and library
 - Settings and model selection
