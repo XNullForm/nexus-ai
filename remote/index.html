@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090b12">
+<title>NEXUS Remote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#090b12;--panel:#111522;--line:#252b3b;--muted:#929bb0;--text:#f4f6ff;--violet:#a78bfa;--cyan:#67e8f9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 5%,#25204b 0,transparent 38%),radial-gradient(ellipse at 90% 80%,#12303b 0,transparent 34%),var(--bg);color:var(--text);font:15px 'DM Sans',sans-serif;min-height:100vh}.wrap{max-width:1080px;margin:auto;padding:28px 24px 60px}.top{display:flex;justify-content:space-between;align-items:center}.brand{display:flex;align-items:center;gap:12px;font:700 20px 'Space Grotesk'}.mark{width:34px;height:34px;border:1px solid #7666b9;border-radius:11px;display:grid;place-items:center;color:var(--violet);box-shadow:0 0 25px #8b5cf633}.version{font:11px 'DM Sans';color:var(--muted);border:1px solid var(--line);padding:5px 8px;border-radius:20px}.hero{padding:86px 0 42px;max-width:730px}.eyebrow{color:var(--cyan);letter-spacing:.16em;font-size:11px;font-weight:700}.hero h1{font:600 clamp(42px,7vw,72px)/1.02 'Space Grotesk';letter-spacing:-.055em;margin:18px 0}.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--violet),var(--cyan));color:transparent;background-clip:text}.hero p{color:var(--muted);font-size:17px;line-height:1.7;max-width:610px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.card{background:#111522d9;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 18px 70px #0003}.card h2{font:600 20px 'Space Grotesk';margin:0 0 9px}.muted{color:var(--muted);line-height:1.65}.status{display:inline-flex;align-items:center;gap:8px;border:1px solid #66532d;background:#33291355;color:#f6d58a;padding:7px 10px;border-radius:30px;font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:#eabf62;box-shadow:0 0 12px #eabf62}.steps{display:grid;gap:16px;margin-top:24px}.step{display:flex;gap:13px;align-items:flex-start}.num{width:27px;height:27px;flex:none;display:grid;place-items:center;border-radius:9px;background:#292346;color:#c4b5fd;font-weight:700}.step b{display:block;margin-bottom:4px}.step small{color:var(--muted);line-height:1.5}.action{display:inline-flex;text-decoration:none;align-items:center;justify-content:center;margin-top:16px;padding:12px 17px;border-radius:12px;background:linear-gradient(100deg,#8b5cf6,#4f9fba);color:white;font-weight:700}.action.secondary{background:#1b2130;border:1px solid var(--line);margin-left:8px}.note{border-top:1px solid var(--line);margin-top:28px;padding-top:18px;color:var(--muted);font-size:12px;line-height:1.7}@media(max-width:720px){.grid{grid-template-columns:1fr}.hero{padding-top:60px}.action.secondary{margin-left:0}.top{align-items:flex-start}}
+</style>
+</head>
+<body><main class="wrap">
+<header class="top"><div class="brand"><span class="mark">N</span>NEXUS REMOTE <span class="version">v0.1.0</span></div><span class="version">WINDOWS HOST</span></header>
+<section class="hero"><div class="eyebrow">YOUR COMPUTER, WHEREVER YOU ARE</div><h1>Remote access.<br><em>With your permission.</em></h1><p>Connect to your personal Windows computer from another computer through a secure browser session. Your PC must be enrolled and online before a session can begin.</p></section>
+<section class="grid">
+<article class="card"><span class="status"><i class="dot"></i> Setup required · Not connected</span><h2 style="margin-top:20px">Your devices</h2><p class="muted">No Windows host has been paired with this NEXUS Remote workspace yet. Deploy the relay and enroll your own PC to see it here.</p><div class="steps">
+<div class="step"><span class="num">1</span><div><b>Deploy the secure relay</b><small>Run the self-hosted MeshCentral service with HTTPS and persistent storage.</small></div></div>
+<div class="step"><span class="num">2</span><div><b>Enroll your Windows PC</b><small>Create your private account and install the official agent from your dashboard.</small></div></div>
+<div class="step"><span class="num">3</span><div><b>Start a remote session</b><small>Open the device dashboard and choose Remote Desktop. Disconnect when finished.</small></div></div>
+</div><a class="action" href="./README.md">Read setup guide ↗</a></article>
+<aside class="card"><h2>Built for safe access</h2><p class="muted">Remote sessions are available only after an administrator has enrolled a device and authenticated to the relay.</p><div class="steps">
+<div class="step"><span class="num">✓</span><div><b>Encrypted HTTPS</b><small>Use a valid TLS certificate and secure WebSocket proxy.</small></div></div>
+<div class="step"><span class="num">✓</span><div><b>Private enrollment</b><small>Public account creation stays disabled.</small></div></div>
+<div class="step"><span class="num">✓</span><div><b>Visible control</b><small>Start and end sessions from the authenticated device dashboard.</small></div></div>
+<div class="step"><span class="num">✓</span><div><b>Owner-authorized</b><small>Install agents only on computers you own or have permission to manage.</small></div></div>
+</div></aside></section>
+<footer class="note">NEXUS Remote v0.1.0 · This is the setup portal, not an active remote desktop connection. The relay server, HTTPS domain, and Windows agent must be configured before remote control is available. <br>Do not expose raw RDP/VNC ports directly to the public internet.</footer>
+</main></body></html>
