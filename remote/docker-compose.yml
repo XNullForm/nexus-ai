@@ -1,0 +1,23 @@
+services:
+  meshcentral:
+    image: ghcr.io/ylianst/meshcentral:latest
+    container_name: nexus-remote
+    restart: unless-stopped
+    ports:
+      - "4430:443"
+      - "8080:80"
+    environment:
+      - HOSTNAME=${NEXUS_REMOTE_HOSTNAME:-localhost}
+      - REVERSE_PROXY=${NEXUS_REMOTE_REVERSE_PROXY:-false}
+      - REVERSE_PROXY_TLS_PORT=${NEXUS_REMOTE_REVERSE_PROXY_TLS_PORT:-443}
+      - IEXTERNAL=${NEXUS_REMOTE_EXTERNAL_IP:-}
+      - ALLOW自UPDATE=false
+    volumes:
+      - meshcentral-data:/opt/meshcentral/meshcentral-data
+      - meshcentral-files:/opt/meshcentral/meshcentral-files
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  meshcentral-data:
+  meshcentral-files:
