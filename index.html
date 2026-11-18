@@ -1,52 +1,99 @@
 <!doctype html>
-<html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080910"><meta name="description" content="NEXUS — your AI workspace for thinking, creating, and exploring.">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b12">
+<meta name="description" content="NEXUS — a thoughtful AI workspace for learning, creating, and exploring.">
 <title>NEXUS — AI Workspace</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css"></head>
-<body><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div><div class="app">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="backdrop-grid"></div><div class="glow glow-a"></div><div class="glow glow-b"></div>
+<div class="app-shell">
 <aside class="sidebar" id="sidebar">
-<a class="brand" href="#" id="homeLink" aria-label="NEXUS home"><span class="brand-mark"><span></span><span></span><span></span><span></span></span><span class="brand-name">nexus<span>.ai</span></span></a>
-<button class="new-chat" id="newChat"><span class="plus">＋</span><span>New conversation</span><kbd>⌘ K</kbd></button>
-<div class="nav-label">WORKSPACE</div><nav class="primary-nav" aria-label="Workspace">
-<button class="nav-link active" data-view="chat"><span class="nav-icon">✳</span><span>AI Chat</span><span class="nav-chevron">›</span></button>
-<button class="nav-link" data-view="reader"><span class="nav-icon">⌁</span><span>Web reader</span><span class="nav-chip">BETA</span></button>
-<button class="nav-link" data-view="library"><span class="nav-icon">▤</span><span>Library</span></button></nav>
-<div class="history-heading"><span class="nav-label">RECENT CONVERSATIONS</span><button id="clearHistory" aria-label="Clear conversation history" title="Clear history">···</button></div>
-<div class="history" id="history"></div>
-<div class="sidebar-bottom"><div class="workspace-card"><div class="workspace-avatar">N</div><div class="workspace-copy"><b>Personal workspace</b><span>Saved on this device</span></div><span class="online-dot"></span></div>
-<div class="sidebar-meta"><span class="version-pill">NEXUS v1.4.0</span><span class="status-caption">OPEN MODEL EDITION</span></div></div></aside>
-<main class="main"><header class="topbar"><div class="top-left"><button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button><div class="breadcrumb"><span>NEXUS</span><i>/</i><b id="viewTitle">AI Chat</b></div></div>
-<div class="top-right"><button class="model-status" id="modelStatus" type="button"><i></i><span>AI service</span><b>On-device AI</b></button><button class="top-icon" id="settingsBtn" aria-label="Open settings" title="Settings">⚙</button></div></header>
-<section class="view active" id="chatView"><div class="chat-inner">
-<div class="welcome" id="welcome"><div class="eyebrow"><span class="eyebrow-spark">✦</span> YOUR THINKING SPACE <span class="eyebrow-line"></span></div>
-<div class="hero-title-wrap"><h1>Ideas start<br><em>somewhere.</em></h1><div class="hero-orbit"><span class="orbit-core">N</span><i></i><b></b></div></div>
-<p class="hero-copy">A calmer space to ask questions, explore ideas, and make things happen. What are we working on?</p>
-<div class="section-caption"><span>GET STARTED</span><span>CHOOSE A STARTING POINT</span></div>
-<div class="prompt-grid">
-<button class="prompt-card" data-prompt="Explain a difficult topic in a simple, step-by-step way."><span class="prompt-icon purple">⌁</span><span class="prompt-text"><b>Learn something</b><small>Break down a tricky topic</small></span><i>↗</i></button>
-<button class="prompt-card" data-prompt="Help me brainstorm a unique technology project and plan how to build it."><span class="prompt-icon cyan">✧</span><span class="prompt-text"><b>Build an idea</b><small>Turn a spark into a plan</small></span><i>↗</i></button>
-<button class="prompt-card" data-prompt="Help me improve this writing while keeping my voice."><span class="prompt-icon orange">✎</span><span class="prompt-text"><b>Write something</b><small>Shape words and stories</small></span><i>↗</i></button>
-<button class="prompt-card" data-prompt="Give me a creative challenge to expand my thinking."><span class="prompt-icon green">◌</span><span class="prompt-text"><b>Explore a thought</b><small>Find a fresh perspective</small></span><i>↗</i></button></div>
-<div class="welcome-foot"><span class="tiny-shield">◈</span>Your conversations stay in this browser on this device.</div></div>
-<div class="messages" id="messages" aria-live="polite"></div>
-<form class="composer-wrap" id="chatForm"><div class="composer-glow"></div><div class="composer">
-<textarea id="prompt" rows="1" placeholder="Message NEXUS..." aria-label="Message NEXUS"></textarea>
-<div class="composer-bottom"><div class="composer-tools"><div class="tools-menu-wrap"><button type="button" class="tools-trigger" id="toolsTrigger" aria-expanded="false">＋ Tools <span>⌄</span></button><div class="tools-menu" id="toolsMenu" hidden><div class="tools-menu-title">NEXUS TOOLS</div><label class="tool-option"><input type="checkbox" id="webSearchToggle"><span><b>Web search</b><small>Search Wikipedia and bring results into chat</small></span></label><label class="tool-option"><input type="checkbox" id="pageReadToggle"><span><b>Read webpage</b><small>Read a public URL you include in your message</small></span></label><div class="tools-footnote">Tools only access public pages. They cannot sign in or control other tabs.</div></div></div><span class="model-spark">✦</span><select id="model" aria-label="AI model"><option value="local">NEXUS Mini · On-device</option></select><span class="model-note">ON-DEVICE AI</span></div>
-<div class="send-tools"><span class="hint">↵ send</span><button class="send" id="sendBtn" type="submit" aria-label="Send message">↑</button></div></div></div><div class="disclaimer">NEXUS can make mistakes. Double-check important information.</div></form>
-</div></section>
-<section class="view" id="readerView"><div class="tool-page"><div class="page-topline"><span class="page-icon">⌁</span><span>TOOLS / 01</span><span class="beta-pill">BETA</span></div>
-<h1>Read beyond<br><em>the headlines.</em></h1><p class="page-intro">Bring a public webpage into your workspace. NEXUS extracts its text so you can understand, summarize, and ask questions about what you're reading.</p>
-<form id="readerForm" class="reader-form"><span class="reader-link-icon">↗</span><input id="readerUrl" type="url" placeholder="Paste a webpage URL…" required><button type="submit" id="readerBtn">Read page <span>→</span></button></form>
-<div class="reader-hint"><span>✦</span>Works with publicly accessible pages. Sign-in pages may not be readable.</div>
-<div class="reader-result" id="readerResult"><div class="empty-tool"><span class="empty-orbit">⌁</span><b>Your reading room</b><small>Paste a public article, guide, or documentation link above.</small></div></div></div></section>
-<section class="view" id="libraryView"><div class="tool-page"><div class="page-topline"><span class="page-icon">▤</span><span>YOUR WORKSPACE / 02</span></div>
-<h1>Your ideas,<br><em>kept together.</em></h1><p class="page-intro">A collection of conversations saved locally in this browser, ready whenever you need them.</p>
-<div class="library-toolbar"><span>RECENT CONVERSATIONS</span><span class="local-tag">THIS DEVICE ONLY</span></div><div class="library-list" id="libraryList"></div></div></section>
-<footer class="main-footer"><span>NEXUS <b>v1.4.0</b></span><span>MADE FOR CURIOSITY <i>✦</i></span></footer></main></div>
-<div class="modal-backdrop" id="settingsModal"><section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-<div class="modal-head"><div><div class="page-kicker">PREFERENCES</div><h2 id="settingsTitle">Workspace settings</h2><p>Fine-tune your NEXUS experience.</p></div><button id="closeSettings" class="close-modal" aria-label="Close settings">×</button></div>
-<label class="setting-row"><span><b>AI model</b><small>A compact model running directly in this browser.</small></span><select id="settingsModel"><option value="local">NEXUS Mini · On-device</option></select></label>
-<div class="setting-note"><span>◈</span><p>Chat runs locally in your browser after the model downloads. Your prompts are not sent to an AI cloud provider. The first download is a few hundred megabytes and may take a while.</p></div>
-<div class="settings-version"><span>Application version</span><b>1.4.0</b></div><button id="doneSettings" class="primary-wide">Done</button></section></div>
-<div class="toast" id="toast" role="status"></div><script src="/app.js"></script></body></html>
+  <a class="brand" href="#" id="homeLink"><span class="brand-symbol"><i></i><i></i><i></i><i></i></span><span>NEXUS<span class="brand-ai">.AI</span></span><span class="brand-version">2.0</span></a>
+  <button class="new-chat" id="newChat"><span>＋</span> New chat <kbd>⌘ K</kbd></button>
+  <div class="side-label">WORKSPACE</div>
+  <nav class="nav-list">
+    <button class="nav-link active" data-view="chat"><span class="nav-ico">✳</span> Chat <span class="nav-arrow">›</span></button>
+    <button class="nav-link" data-view="reader"><span class="nav-ico">⌁</span> Web reader <span class="nav-beta">BETA</span></button>
+    <button class="nav-link" data-view="library"><span class="nav-ico">▤</span> Library</button>
+  </nav>
+  <div class="history-head"><span class="side-label">RECENT CHATS</span><button id="clearHistory" title="Clear saved chats">···</button></div>
+  <div class="history-list" id="history"></div>
+  <div class="sidebar-bottom">
+    <div class="profile-card"><div class="profile-avatar">N</div><div><b>Personal workspace</b><small>Saved on this device</small></div><span class="online-dot"></span></div>
+    <div class="side-foot"><span>VERSION 2.0.0</span><span>LOCAL MODEL EDITION</span></div>
+  </div>
+</aside>
+<main class="main-panel">
+<header class="topbar">
+  <div class="topbar-left"><button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button><div class="crumb"><span>NEXUS</span><i>/</i><b id="viewTitle">Chat</b></div></div>
+  <div class="topbar-right"><div class="status-pill" id="modelStatus"><span class="status-dot"></span><span id="statusText">Model not loaded</span></div><button class="icon-button" id="settingsBtn" aria-label="Settings" title="Settings">⚙</button></div>
+</header>
+<section class="view active" id="chatView">
+ <div class="chat-layout">
+  <div class="welcome" id="welcome">
+    <div class="eyebrow"><span>✦</span> YOUR AI WORKSPACE <i></i></div>
+    <div class="hero-row"><h1>Make room<br>for <em>what's next.</em></h1><div class="hero-mark"><div class="hero-core">N</div><span class="ring ring-one"></span><span class="ring ring-two"></span><b></b></div></div>
+    <p class="hero-description">Think clearly, learn faster, and turn ideas into something real. Start anywhere.</p>
+    <div class="section-head"><span>START WITH AN IDEA</span><small>CHOOSE A MODE</small></div>
+    <div class="mode-grid">
+      <button class="mode-card" data-mode="learn" data-prompt="Teach me this topic step by step: "><span class="mode-icon violet">⌁</span><span><b>Learn</b><small>Understand difficult topics</small></span><i>↗</i></button>
+      <button class="mode-card" data-mode="write" data-prompt="Help me write and improve this while keeping it natural: "><span class="mode-icon aqua">✎</span><span><b>Writing</b><small>Draft, edit, and refine</small></span><i>↗</i></button>
+      <button class="mode-card" data-mode="code" data-prompt="Help me plan, understand, or debug this code: "><span class="mode-icon amber">{ }</span><span><b>Code</b><small>Build and troubleshoot</small></span><i>↗</i></button>
+      <button class="mode-card" data-mode="ideas" data-prompt="Help me brainstorm creative ideas for: "><span class="mode-icon mint">✧</span><span><b>Brainstorm</b><small>Explore new directions</small></span><i>↗</i></button>
+    </div>
+    <div class="welcome-note"><span>◈</span> Your chats are stored locally in this browser.</div>
+  </div>
+  <div class="messages" id="messages" aria-live="polite"></div>
+  <form class="composer-wrap" id="chatForm" action="#" method="get">
+    <div class="composer">
+      <textarea id="prompt" rows="1" placeholder="Ask NEXUS anything…" aria-label="Message NEXUS"></textarea>
+      <div class="composer-footer">
+        <div class="composer-left">
+          <div class="tools-wrap"><button type="button" class="tools-button" id="toolsTrigger" aria-expanded="false">＋ Tools <span>⌄</span></button>
+            <div class="tools-popover" id="toolsMenu" hidden>
+              <div class="popover-title">TOOLS</div>
+              <label class="tool-row"><input type="checkbox" id="webSearchToggle"><span><b>Web search</b><small>Search encyclopedia articles</small></span></label>
+              <label class="tool-row"><input type="checkbox" id="pageReadToggle"><span><b>Read webpage</b><small>Bring a public URL into chat</small></span></label>
+              <p>Tools retrieve public information only. They do not control tabs or sign in to websites.</p>
+            </div>
+          </div>
+          <select id="modeSelect" aria-label="Response mode"><option value="balanced">Balanced</option><option value="tutor">Tutor</option><option value="concise">Concise</option><option value="creative">Creative</option><option value="technical">Technical</option></select>
+          <span class="local-label"><i></i> ON-DEVICE</span>
+        </div>
+        <div class="composer-right"><span class="enter-hint">↵ to send</span><button class="send-button" id="sendBtn" type="submit" aria-label="Send message">↑</button></div>
+      </div>
+    </div>
+    <div class="composer-disclaimer">NEXUS Mini can make mistakes. Verify important information.</div>
+  </form>
+ </div>
+</section>
+<section class="view" id="readerView">
+ <div class="tool-page">
+  <div class="page-kicker"><span>⌁</span> WORKSPACE TOOLS / 01</div><h1>Read deeper.<br><em>Think clearer.</em></h1>
+  <p class="page-intro">Paste a publicly accessible webpage and NEXUS will extract its text so you can read, summarize, and explore it.</p>
+  <form class="reader-form" id="readerForm"><span>↗</span><input id="readerUrl" type="url" placeholder="https://example.com/article" required><button id="readerBtn" type="submit">Read page <b>→</b></button></form>
+  <div class="reader-hint">✦ Public pages only. Pages behind sign-in may not work.</div>
+  <div id="readerResult" class="reader-result"><div class="empty-state"><span>⌁</span><b>Your reading room</b><small>Paste an article, guide, or documentation link above.</small></div></div>
+ </div>
+</section>
+<section class="view" id="libraryView"><div class="tool-page"><div class="page-kicker"><span>▤</span> YOUR WORKSPACE / 02</div><h1>Your ideas,<br><em>all together.</em></h1><p class="page-intro">Your saved conversations, stored on this device.</p><div class="library-heading"><b>RECENT CONVERSATIONS</b><span>THIS DEVICE ONLY</span></div><div id="libraryList" class="library-list"></div></div></section>
+<footer class="main-footer"><span>NEXUS <b>v2.0.0</b></span><span>BUILT FOR CURIOSITY <i>✦</i></span></footer>
+</main>
+</div>
+<div class="modal-backdrop" id="settingsModal"><section class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+ <div class="dialog-head"><div><span class="dialog-kicker">PREFERENCES</span><h2 id="settingsTitle">Your workspace</h2><p>Make NEXUS feel right for you.</p></div><button id="closeSettings" class="close-button" aria-label="Close settings">×</button></div>
+ <div class="setting-line"><div><b>Appearance</b><small>Choose your workspace theme.</small></div><select id="themeSelect"><option value="dark">Midnight</option><option value="light">Daylight</option></select></div>
+ <div class="setting-line"><div><b>Send with Enter</b><small>Use Enter to send and Shift + Enter for a new line.</small></div><input type="checkbox" id="enterToSend" checked></div>
+ <div class="model-info"><span>✦</span><p><b>NEXUS Mini · Qwen2 0.5B</b><br>A compact open model runs in your browser with WebGPU. It is lightweight, but less capable than large hosted AI models. The first download needs internet; later launches can reuse the cached model.</p></div>
+ <div class="dialog-version"><span>Application version</span><b>2.0.0</b></div><button id="doneSettings" class="done-button">Done</button>
+</section></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="/app.js" defer></script>
+</body></html>
