@@ -14,6 +14,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - ./config.json:/opt/meshcentral/meshcentral-data/config.json:ro
       - meshcentral-data:/opt/meshcentral/meshcentral-data
       - meshcentral-files:/opt/meshcentral/meshcentral-files
       - meshcentral-web:/opt/meshcentral/meshcentral-web
