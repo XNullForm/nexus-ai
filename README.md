@@ -1,4 +1,6 @@
-# NEXUS AI\n\n**Current version: 1.2.0**
+# NEXUS AI
+
+**Current version: 1.2.0**
 
 NEXUS is a browser-based AI workspace. Chat requests are sent to a Vercel serverless route, which calls Hugging Face Inference Providers. The secret token remains server-side.
 
