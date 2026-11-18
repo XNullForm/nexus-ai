@@ -1,106 +1,63 @@
+/* NEXUS 2.0.0 — local-first AI workspace */
+(function(){
+'use strict';
 const $=id=>document.getElementById(id);
-const input=$('prompt'),messagesEl=$('messages'),welcome=$('welcome');
-
-let messages=[],history=[],busy=false,activeView='chat',localEngine=null,enginePromise=null;
-const LOCAL_MODEL='Qwen2-0.5B-Instruct-q4f16_1-MLC';
-let lastToolSources=[];
-async function getLocalEngine(onProgress=()=>{}){
- if(localEngine)return localEngine;
- if(enginePromise)return enginePromise;
- enginePromise=(async()=>{
-  if(!navigator.gpu)throw new Error('This browser does not expose WebGPU. Update iOS and open NEXUS in Safari, or try a supported device.');
-  onProgress('Loading the local AI engine…');
-  const webllm=await import('https://esm.run/@mlc-ai/web-llm');
-  const engine=await webllm.CreateMLCEngine(LOCAL_MODEL,{initProgressCallback:p=>onProgress(p.text||'Preparing local model…')});
-  localEngine=engine;return engine;
- })();
- try{return await enginePromise}catch(e){enginePromise=null;throw e}
+const state={messages:[],history:[],busy:false,view:'chat',engine:null,enginePromise:null,lastSources:[],lastUserPrompt:'',lastMode:'balanced'};
+const MODEL='Qwen2-0.5B-Instruct-q4f16_1-MLC';
+const STORE='nexus-history-v3';
+const MODE_PROMPTS={
+ balanced:'Be helpful, accurate, and clear. Give enough explanation to be useful. Admit uncertainty.',
+ tutor:'Act as a patient tutor. Explain in small steps, define unfamiliar terms, use a simple example, and check for understanding when useful. Do not simply dump an answer.',
+ concise:'Be direct and concise. Lead with the answer, then give only the most useful supporting detail.',
+ creative:'Be imaginative and original while staying coherent and useful. Offer concrete ideas rather than generic filler.',
+ technical:'Be technically precise. State assumptions, explain the reasoning, and use clear code or structured steps when relevant.'
+};
+function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),3000)}
+function setStatus(message,kind){$('statusText').textContent=message;const dot=document.querySelector('.status-dot');dot.className='status-dot'+(kind?' '+kind:'')}
+function safeLoad(){try{const data=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(data)?data.filter(x=>x&&Array.isArray(x.messages)).slice(0,40):[]}catch{return []}}
+function persist(){try{localStorage.setItem(STORE,JSON.stringify(state.history.slice(0,40)))}catch{toast('Device storage is full. Some older chats may not save.')}}
+function titleFor(messages){const m=messages.find(x=>x.role==='user');return (m?.content||'New conversation').replace(/\s+/g,' ').slice(0,54)}
+function saveCurrent(){if(!state.messages.length)return;const title=titleFor(state.messages);const record={id:Date.now(),title,messages:state.messages.slice(-40),updated:Date.now()};state.history=[record,...state.history.filter(x=>x.title!==title)].slice(0,40);persist();renderHistory()}
+function renderHistory(){const host=$('history');host.replaceChildren();if(!state.history.length){const p=document.createElement('p');p.className='history-empty';p.textContent='Your chats will appear here.';host.append(p);return}state.history.slice(0,14).forEach(item=>{const b=document.createElement('button');b.className='history-item';b.textContent=item.title;b.title=item.title;b.addEventListener('click',()=>loadChat(item.id));host.append(b)})}
+function renderLibrary(){const host=$('libraryList');host.replaceChildren();if(!state.history.length){const empty=document.createElement('div');empty.className='empty-state';empty.innerHTML='<span>▤</span><b>No saved chats yet</b><small>Start a conversation and it will appear here.</small>';host.append(empty);return}state.history.forEach(item=>{const row=document.createElement('article');row.className='library-row';const info=document.createElement('div'),name=document.createElement('b'),meta=document.createElement('small');name.textContent=item.title;meta.textContent=item.messages.length+' messages';info.append(name,meta);const actions=document.createElement('div'),open=document.createElement('button'),remove=document.createElement('button');open.textContent='Open chat';open.addEventListener('click',()=>{loadChat(item.id);switchView('chat')});remove.textContent='Delete';remove.className='subtle-button';remove.addEventListener('click',()=>{state.history=state.history.filter(x=>x.id!==item.id);persist();renderLibrary();renderHistory()});actions.append(open,remove);row.append(info,actions);host.append(row)})}
+function makeMessage(role,content){const row=document.createElement('article');row.className='message '+role;const avatar=document.createElement('div');avatar.className='message-avatar';avatar.textContent=role==='user'?'Y':'✦';const body=document.createElement('div');body.className='message-content';const bubble=document.createElement('div');bubble.className='message-bubble';bubble.textContent=content;body.append(bubble);row.append(avatar,body);$('messages').append(row);row.scrollIntoView({behavior:'smooth',block:'end'});return {row,bubble,body}}
+function addAssistantActions(body,text){const bar=document.createElement('div');bar.className='message-actions';const copy=document.createElement('button');copy.textContent='Copy';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(text);toast('Copied to clipboard')}catch{toast('Clipboard access is unavailable in this browser.')}});bar.append(copy);body.append(bar)}
+function renderMessages(){const host=$('messages');host.replaceChildren();state.messages.forEach(m=>{const item=makeMessage(m.role,m.content);if(m.role==='assistant')addAssistantActions(item.body,m.content)});const has=state.messages.length>0;host.classList.toggle('visible',has);$('welcome').hidden=has}
+function loadChat(id){const chat=state.history.find(x=>x.id===id);if(!chat)return;state.messages=chat.messages.slice();renderMessages();$('sidebar').classList.remove('open')}
+function resetChat(){if(state.busy)return;state.messages=[];renderMessages();$('prompt').value='';resizePrompt();$('prompt').focus()}
+function switchView(view){state.view=view;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(view+'View').classList.add('active');document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('viewTitle').textContent=view==='reader'?'Web reader':view==='library'?'Library':'Chat';if(view==='library')renderLibrary();$('sidebar').classList.remove('open')}
+function resizePrompt(){const el=$('prompt');el.style.height='auto';el.style.height=Math.min(el.scrollHeight,170)+'px'}
+async function loadEngine(onProgress){if(state.engine)return state.engine;if(state.enginePromise)return state.enginePromise;state.enginePromise=(async()=>{if(!navigator.gpu)throw new Error('WebGPU is not available in this browser. Try an up-to-date Safari or another supported browser and device.');onProgress('Starting local AI…');const lib=await import('https://esm.run/@mlc-ai/web-llm');const engine=await lib.CreateMLCEngine(MODEL,{initProgressCallback:p=>onProgress(p.text||'Downloading model…')});state.engine=engine;return engine})();try{return await state.enginePromise}catch(error){state.enginePromise=null;throw error}}
+function setBusy(value){state.busy=value;$('sendBtn').disabled=value;$('prompt').disabled=value;$('readerBtn').disabled=value}
+async function runTools(prompt){state.lastSources=[];const context=[],sources=[];if($('webSearchToggle').checked){const response=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:prompt})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Search failed.');context.push('PUBLIC SEARCH RESULTS (Wikipedia):\n'+(data.results||[]).map((x,i)=>(i+1)+'. '+x.title+'\n'+x.extract+'\nURL: '+x.url).join('\n\n'));(data.results||[]).forEach(x=>sources.push({title:x.title,url:x.url}))}if($('pageReadToggle').checked){const urls=prompt.match(/https?:\/\/[^\s<>"']+/gi)||[];if(!urls.length)throw new Error('Include a public http or https URL in your message to use Read webpage.');const url=urls[0].replace(/[),.]+$/,'');const response=await fetch('/api/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not read webpage.');context.push('PUBLIC WEBPAGE CONTENT: '+data.title+'\nURL: '+data.url+'\n'+data.text.slice(0,6000));sources.push({title:data.title,url:data.url})}state.lastSources=sources;return context.join('\n\n')}
+function appendSources(body){if(!state.lastSources.length)return;const box=document.createElement('div');box.className='source-box';const label=document.createElement('b');label.textContent='Sources';box.append(label);state.lastSources.forEach(source=>{const a=document.createElement('a');a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ '+source.title;box.append(a)});body.append(box)}
+function buildSystemPrompt(mode,toolContext){return 'You are NEXUS, a helpful, thoughtful, age-appropriate AI assistant. '+(MODE_PROMPTS[mode]||MODE_PROMPTS.balanced)+' Be honest about what you can and cannot do. Never claim to have opened tabs, controlled a browser, viewed an image, or accessed live information unless the user supplied it or a tool result is present. If sources are provided, distinguish retrieved facts from your own explanation. If the question is ambiguous, ask one focused clarifying question. Avoid inventing facts.'+(toolContext?' Use the retrieved public information below as evidence, and say when it does not answer the question.':'')}
+async function generateReply(prompt,mode,bubble,body){const toolContext=await runTools(prompt);const engine=await loadEngine(progress=>{bubble.textContent='Getting NEXUS ready…\n'+progress;setStatus(progress,'loading')});setStatus('Ready · On-device','ready');bubble.textContent='';const prior=state.messages.slice(0,-1).slice(-8).map(m=>({role:m.role,content:m.content.slice(0,2600)}));const userContent=toolContext?'Question: '+prompt+'\n\nRetrieved information:\n'+toolContext:prompt;const request=[{role:'system',content:buildSystemPrompt(mode,toolContext)},...prior,{role:'user',content:userContent}];const stream=await engine.chat.completions.create({messages:request,temperature:mode==='creative'?.85:.55,max_tokens:520,stream:true});let answer='';for await(const part of stream){const delta=part.choices?.[0]?.delta?.content||'';if(delta){answer+=delta;bubble.textContent=answer;}}if(!answer.trim())throw new Error('The model returned an empty answer. Try a shorter message.');state.messages.push({role:'assistant',content:answer});appendSources(body);addAssistantActions(body,answer);saveCurrent();setStatus('Ready · On-device','ready')}
+async function submitChat(event){event.preventDefault();event.stopPropagation();if(state.busy)return;const input=$('prompt');const content=input.value.trim();if(!content)return;const mode=$('modeSelect').value;state.lastUserPrompt=content;state.lastMode=mode;setBusy(true);if(state.view!=='chat')switchView('chat');$('welcome').hidden=true;$('messages').classList.add('visible');state.messages.push({role:'user',content});makeMessage('user',content);input.value='';resizePrompt();const assistant=makeMessage('assistant','Preparing your answer…');try{await generateReply(content,mode,assistant.bubble,assistant.body)}catch(error){assistant.bubble.textContent='I couldn’t complete that request.\n\n'+(error?.message||'Unknown error')+'\n\nYour message is still here. Check your connection and try again.';addAssistantActions(assistant.body,assistant.bubble.textContent);setStatus('Needs attention','error')}finally{setBusy(false);input.focus()}}
+function regenerate(){if(state.busy||!state.lastUserPrompt)return;const last=state.messages[state.messages.length-1];if(last?.role==='assistant')state.messages.pop();const user=state.messages[state.messages.length-1];if(user?.role!=='user')return;state.messages.pop();$('prompt').value=state.lastUserPrompt;submitChat(new Event('submit',{cancelable:true}))}
+function exportChat(){if(!state.messages.length){toast('There is no conversation to export.');return}const text=state.messages.map(m=>(m.role==='user'?'You':'NEXUS')+':\n'+m.content).join('\n\n');const blob=new Blob([text],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='nexus-conversation.txt';a.click();URL.revokeObjectURL(url);toast('Conversation exported')}
+function showTools(open){$('toolsMenu').hidden=!open;$('toolsTrigger').setAttribute('aria-expanded',String(open))}
+function bindEvents(){
+ $('chatForm').addEventListener('submit',submitChat);
+ $('prompt').addEventListener('input',resizePrompt);
+ $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&$('enterToSend').checked){e.preventDefault();$('chatForm').requestSubmit()}});
+ $('toolsTrigger').addEventListener('click',()=>showTools($('toolsMenu').hidden));
+ document.addEventListener('click',e=>{if(!e.target.closest('.tools-wrap'))showTools(false)});
+ document.querySelectorAll('.nav-link').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+ $('newChat').addEventListener('click',()=>{resetChat();switchView('chat')});
+ $('homeLink').addEventListener('click',e=>{e.preventDefault();switchView('chat')});
+ $('mobileMenu').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
+ $('clearHistory').addEventListener('click',()=>{if(confirm('Delete all saved conversations from this device?')){state.history=[];persist();renderHistory();renderLibrary();toast('Saved chats cleared')}});
+ document.querySelectorAll('.mode-card').forEach(b=>b.addEventListener('click',()=>{const mode=b.dataset.mode;$('modeSelect').value=mode==='learn'?'tutor':mode==='write'?'creative':mode==='code'?'technical':'creative';$('prompt').value=b.dataset.prompt;$('prompt').focus();resizePrompt()}));
+ $('settingsBtn').addEventListener('click',()=>$('settingsModal').classList.add('open'));
+ $('closeSettings').addEventListener('click',()=>$('settingsModal').classList.remove('open'));
+ $('doneSettings').addEventListener('click',()=>$('settingsModal').classList.remove('open'));
+ $('themeSelect').addEventListener('change',e=>{document.documentElement.dataset.theme=e.target.value;try{localStorage.setItem('nexus-theme',e.target.value)}catch{}});
+ $('enterToSend').addEventListener('change',e=>{try{localStorage.setItem('nexus-enter-send',String(e.target.checked))}catch{}});
+ $('readerForm').addEventListener('submit',readPage);
+ document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();resetChat();switchView('chat')}if(e.key==='Escape'){$('settingsModal').classList.remove('open');showTools(false)}});
 }
-try{history=JSON.parse(localStorage.getItem('nexus-history-v2')||'[]')}catch{}
-function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200)}
-function setStatus(s){const b=$('modelStatus').querySelector('b');if(b)b.textContent=s}
-function save(){try{localStorage.setItem('nexus-history-v2',JSON.stringify(history.slice(0,30)))}catch{toast('Storage is full; older chats may not save.')}}
-function titleOf(ms){return(ms.find(x=>x.role==='user')?.content||'New conversation').slice(0,46)}
-function saveChat(){if(!messages.length)return;const title=titleOf(messages);history=[{id:Date.now(),title,messages:messages.slice()},...history.filter(x=>x.title!==title)].slice(0,30);save();renderHistory()}
-function renderHistory(){const el=$('history');el.innerHTML='';if(!history.length){el.innerHTML='<div class="history-empty">Your conversations will appear here.</div>';return}history.slice(0,12).forEach(c=>{const b=document.createElement('button');b.className='history-item';b.textContent=c.title;b.onclick=()=>loadChat(c.id);el.append(b)})}
-function renderLibrary(){const el=$('libraryList');el.innerHTML='';if(!history.length){el.innerHTML='<div class="empty-tool"><span>▤</span><b>No saved conversations yet</b><small>Start a chat and it will appear here.</small></div>';return}history.forEach(c=>{const row=document.createElement('div');row.className='library-entry';const info=document.createElement('div'),b=document.createElement('b'),sm=document.createElement('small');b.textContent=c.title;sm.textContent=c.messages.length+' messages';info.append(b,sm);const open=document.createElement('button');open.textContent='Open chat →';open.onclick=()=>{loadChat(c.id);switchView('chat')};row.append(info,open);el.append(row)})}
-function addMessage(role,content){const row=document.createElement('div');row.className='message '+role;const av=document.createElement('div');av.className='message-avatar';av.textContent=role==='user'?'N':'✦';const bubble=document.createElement('div');bubble.className='message-bubble';bubble.textContent=content;row.append(av,bubble);messagesEl.append(row);row.scrollIntoView({behavior:'smooth',block:'end'});return bubble}
-function renderMessages(){messagesEl.innerHTML='';messages.forEach(m=>addMessage(m.role,m.content));const yes=messages.length>0;messagesEl.style.display=yes?'flex':'none';welcome.style.display=yes?'none':'block'}
-function loadChat(id){const c=history.find(x=>x.id===id);if(!c)return;messages=c.messages.slice();renderMessages();$('sidebar').classList.remove('open')}
-function reset(){messages=[];renderMessages();input.focus()}
-function switchView(v){activeView=v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$(v+'View').classList.add('active');document.querySelectorAll('.nav-link').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('viewTitle').textContent=v==='reader'?'Web reader':v==='library'?'Library':'Chat';if(v==='library')renderLibrary();$('sidebar').classList.remove('open')}
-$('modelStatus').onclick=()=>{$('settingsModal').classList.add('open')};
-function resize(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,180)+'px'}
-document.querySelectorAll('.nav-link').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
-$('homeLink').onclick=e=>{e.preventDefault();switchView('chat')};
-$('newChat').onclick=()=>{reset();switchView('chat')};
-$('mobileMenu').onclick=()=>$('sidebar').classList.toggle('open');
-$('clearHistory').onclick=()=>{if(confirm('Delete all locally saved conversations?')){history=[];save();renderHistory();renderLibrary();toast('Saved history cleared.')}};
-$('settingsBtn').onclick=()=>$('settingsModal').classList.add('open');
-$('closeSettings').onclick=$('doneSettings').onclick=()=>$('settingsModal').classList.remove('open');
-$('model').onchange=()=>$('settingsModel').value=$('model').value;
-$('settingsModel').onchange=()=>$('model').value=$('settingsModel').value;
-document.querySelectorAll('.prompt-card').forEach(b=>b.onclick=()=>{input.value=b.dataset.prompt;input.focus();resize()});
-
-input.addEventListener('input',resize);
-const toolsTrigger=$('toolsTrigger'),toolsMenu=$('toolsMenu');
-toolsTrigger.onclick=()=>{const open=toolsMenu.hidden;toolsMenu.hidden=!open;toolsTrigger.setAttribute('aria-expanded',String(open))};
-document.addEventListener('click',e=>{if(!e.target.closest('.tools-menu-wrap')){toolsMenu.hidden=true;toolsTrigger.setAttribute('aria-expanded','false')}});
-async function runSelectedTools(promptText){
- lastToolSources=[];
- const context=[],sources=[];
- if($('webSearchToggle').checked){
-  const r=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:promptText})});
-  const d=await r.json();if(!r.ok)throw new Error(d.error||'Web search failed.');
-  context.push('WEB SEARCH RESULTS (Wikipedia):\\n'+d.results.map((x,i)=>(i+1)+'. '+x.title+'\\n'+x.extract+'\\nURL: '+x.url).join('\\n\\n'));
-  d.results.forEach(x=>sources.push({title:x.title,url:x.url}));
- }
- if($('pageReadToggle').checked){
-  const urls=promptText.match(/https?:\\/\\/[^\\s<>"']+/gi)||[];
-  if(!urls.length)throw new Error('For Read webpage, include a public http or https URL in your message.');
-  const target=urls[0].replace(/[),.]+$/,'');
-  const r=await fetch('/api/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target})});
-  const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not read that webpage.');
-  context.push('READ WEBPAGE: '+d.title+'\\nURL: '+d.url+'\\n'+d.text.slice(0,6500));
-  sources.push({title:d.title,url:d.url});
- }
- lastToolSources=sources;
- return context.join('\\n\\n');
-}
-function showSources(bubble,sources){
- if(!sources.length)return;
- const box=document.createElement('div');box.className='tool-source-list';
- const heading=document.createElement('b');heading.textContent='Sources used';box.append(heading);
- sources.forEach(s=>{const a=document.createElement('a');a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ '+s.title;box.append(a)});
- bubble.append(box);
-}
-
-input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
-$('chatForm').addEventListener('submit',async e=>{
- e.preventDefault();const content=input.value.trim();if(!content||busy)return;
- busy=true;$('sendBtn').disabled=true;input.value='';resize();if(activeView!=='chat')switchView('chat');
- welcome.style.display='none';messagesEl.style.display='flex';messages.push({role:'user',content});addMessage('user',content);
- const bubble=addMessage('assistant','Connecting to NEXUS AI…');setStatus('Starting on-device AI…');
- try{
-  const toolEnabled=$('webSearchToggle').checked||$('pageReadToggle').checked;
-  let toolContext='';if(toolEnabled){bubble.textContent='Using selected tools…';toolContext=await runSelectedTools(content)}
-  const engine=await getLocalEngine(progress=>{bubble.textContent='Preparing NEXUS on this device…\\n'+progress;setStatus('Loading local model…')});
-  bubble.textContent='NEXUS is thinking…';setStatus('Local model · Ready');
-  const conversation=messages.slice(0,-1);
-  const systemPrompt='You are NEXUS, a helpful, thoughtful, age-appropriate AI assistant. Be accurate and clear. You are a compact on-device model; be honest about uncertainty and limitations. Never claim to browse or use tools unless that happened. If tool results are supplied, answer using them and mention relevant source names.';
-  const userPrompt=toolContext?'User request: '+content+'\\n\\nRetrieved public web information:\\n'+toolContext:content;
-  const result=await engine.chat.completions.create({messages:[{role:'system',content:systemPrompt},...conversation,{role:'user',content:userPrompt}],temperature:.7,max_tokens:700});
-  const reply=result.choices?.[0]?.message?.content;
-  if(typeof reply!=='string'||!reply.trim())throw new Error('The local model returned an empty response. Try a shorter message.');
-  bubble.textContent=reply;showSources(bubble,lastToolSources);messages.push({role:'assistant',content:reply});saveChat();setStatus('Local model · Ready');
- }catch(err){
-  bubble.textContent='NEXUS could not start the local model. '+err.message+'\n\nThe first setup downloads a small model to this browser. Keep this tab open and use a regular Safari tab (not Private Browsing).';
-  setStatus('Request needs attention');
- }finally{busy=false;$('sendBtn').disabled=false;input.focus()}
-});
-$('readerForm').addEventListener('submit',async e=>{
- e.preventDefault();const url=$('readerUrl').value.trim(),result=$('readerResult');
- result.innerHTML='<div class="empty-tool"><span>◌</span><b>Reading page…</b><small>Fetching public page text.</small></div>';$('readerBtn').disabled=true;
- try{const r=await fetch('/api/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await r.json();if(!r.ok)throw Error(data.error||'Could not read page');const card=document.createElement('article');card.className='article-card';const h=document.createElement('h2'),meta=document.createElement('div'),body=document.createElement('div');h.textContent=data.title||'Webpage';meta.className='article-meta';meta.textContent=data.url;body.className='article-text';body.textContent=data.text;card.append(h,meta,body);result.replaceChildren(card);const ask=document.createElement('button');ask.className='primary-wide';ask.style.marginTop='12px';ask.textContent='Ask NEXUS about this page';ask.onclick=()=>{switchView('chat');input.value='Please analyze this webpage and answer questions about it:\n\n'+data.title+'\n'+data.text.slice(0,9000);resize();input.focus()};result.append(ask)}catch(err){result.textContent=err.message}finally{$('readerBtn').disabled=false}
-});
-renderHistory();$('settingsModel').value=$('model').value;
+async function readPage(event){event.preventDefault();const url=$('readerUrl').value.trim(),host=$('readerResult');host.replaceChildren();const loading=document.createElement('div');loading.className='empty-state';loading.innerHTML='<span class="spinner"></span><b>Reading page…</b><small>Fetching public page text.</small>';host.append(loading);$('readerBtn').disabled=true;try{const response=await fetch('/api/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not read page.');const card=document.createElement('article');card.className='article-card';const title=document.createElement('h2'),meta=document.createElement('p'),text=document.createElement('div');title.textContent=data.title||'Webpage';meta.className='article-meta';meta.textContent=data.url;text.className='article-text';text.textContent=data.text;card.append(title,meta,text);host.replaceChildren(card);const ask=document.createElement('button');ask.className='reader-ask';ask.textContent='Ask NEXUS about this page →';ask.addEventListener('click',()=>{switchView('chat');$('pageReadToggle').checked=false;$('prompt').value='Analyze this webpage and answer questions using its content:\n\n'+data.title+'\n'+data.text.slice(0,7000);resizePrompt();$('prompt').focus()});host.append(ask)}catch(error){const message=document.createElement('div');message.className='empty-state';message.textContent=error.message;host.replaceChildren(message)}finally{$('readerBtn').disabled=false}}
+function init(){state.history=safeLoad();renderHistory();renderMessages();bindEvents();try{const theme=localStorage.getItem('nexus-theme');if(theme==='light'||theme==='dark'){$('themeSelect').value=theme;document.documentElement.dataset.theme=theme}const enter=localStorage.getItem('nexus-enter-send');if(enter!==null)$('enterToSend').checked=enter==='true'}catch{}setStatus('Model not loaded');$('prompt').focus({preventScroll:true})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
