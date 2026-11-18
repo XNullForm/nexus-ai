@@ -41,7 +41,7 @@ $('chatForm').addEventListener('submit',async e=>{
   if(typeof data.reply!=='string'||!data.reply.trim())throw new Error('The AI service returned an empty response.');
   bubble.textContent=data.reply;messages.push({role:'assistant',content:data.reply});saveChat();setStatus('Hugging Face API · Connected');
  }catch(err){
-  bubble.textContent='NEXUS could not get a response. '+err.message+'\n\nCheck that HF_TOKEN is set in Vercel for Production and that it has “Make calls to Inference Providers” permission. Then redeploy.';
+  bubble.textContent='NEXUS could not get a response. '+err.message+'\n\nIf this mentions an unavailable provider, check that at least one provider serving Qwen3.5-9B is enabled in your Hugging Face settings. If it mentions authentication, check the HF_TOKEN environment variable in Vercel and redeploy.';
   setStatus('AI service needs attention');
  }finally{busy=false;$('sendBtn').disabled=false;input.focus()}
 });
