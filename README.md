@@ -1,32 +1,28 @@
 # NEXUS AI
 
-NEXUS is a browser-based AI workspace with a redesigned chat interface, local conversation library, model selector, and public webpage reader. It uses open-weight Qwen models through Hugging Face Inference Providers rather than the OpenAI API.
+NEXUS is a browser-based AI workspace. Its chat model runs locally on the user's device through WebLLM and WebGPU, rather than relying on a hosted model API or a secret API token.
 
 ## Deploy on Vercel
 
 1. Import this repository into Vercel: https://vercel.com/new
-2. Create a Hugging Face account and review its current age, account, and billing requirements. If needed, ask a parent or guardian to help.
-3. Create an access token with the minimum permissions required for inference.
-4. In Vercel → Project → Settings → Environment Variables, add **HF_TOKEN** with the token value. Keep it private; never paste it into GitHub, frontend code, or a chat.
-5. Redeploy after saving the environment variable.
-6. Open the Vercel URL and send a test message.
-
-The default model is Qwen2.5 7B Instruct; NEXUS Lite uses Qwen2.5 3B Instruct. Provider availability, speed, and possible costs depend on Hugging Face's current Inference Providers offering. This runs open-weight models through hosted inference; it does not train a new foundation model and does not need an OpenAI API key.
+2. Deploy the project. No `HF_TOKEN`, OpenAI key, or other inference secret is required.
+3. Open the deployed site in a modern browser with WebGPU support.
+4. Send a message. NEXUS downloads the quantized Qwen2.5 1.5B model the first time and then runs inference on the device. The download is roughly around 1 GB and is cached by the browser when supported.
 
 ## Included
 
-- Responsive NEXUS interface and mobile navigation
-- Two open-model size options
-- Chat history saved locally in the browser
-- Library view to reopen conversations
-- Settings and model selection
-- Server-side model gateway
-- Public webpage text reader with basic URL and redirect checks
+- Responsive chat interface and mobile navigation
+- Local on-device model inference with WebLLM
+- Local conversation history and library
+- Settings and model status/progress
+- Public webpage text reader
 
-## Current limitations
+## Important limitations
 
-The reader extracts public HTML/text; it is not a full browser and cannot control tabs, click websites, sign into accounts, or access pages behind a login. Web search, image understanding, voice, user accounts, and cross-device sync are not included yet. Hosted inference may require an eligible account and available credits. Do not use this project to bypass school filters, monitoring, or device-management rules.
+This is a real open-weight language model running on the user's device, not a newly trained frontier model and not a copy of ChatGPT, Claude, or Gemini. A 1.5B model is much smaller and less capable than those services. The first model download needs internet access, and inference needs a compatible WebGPU browser and enough device memory. If WebGPU is unavailable, chat will explain the limitation rather than silently calling a paid cloud API.
 
-## Local development
+The webpage reader extracts public HTML/text; it is not a full browser and cannot control tabs, sign into websites, or access pages behind a login. Image understanding, voice, web search, user accounts, and cross-device sync are not included yet. Do not use this project to bypass school filters, monitoring, or device-management rules.
 
-The frontend is static and API routes use the Vercel serverless runtime. Run with the Vercel CLI (vercel dev) after configuring HF_TOKEN in your local environment.
+## How it works
+
+The static frontend loads WebLLM from its published package and initializes a quantized Qwen model. The model weights are downloaded from public model hosting on first use; prompts and generated responses are processed locally in the browser. The Vercel `/api/chat` route is no longer used by the chat interface.
