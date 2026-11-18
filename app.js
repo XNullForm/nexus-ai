@@ -3,6 +3,7 @@ const input=$('prompt'),messagesEl=$('messages'),welcome=$('welcome');
 
 let messages=[],history=[],busy=false,activeView='chat',localEngine=null,enginePromise=null;
 const LOCAL_MODEL='Qwen2-0.5B-Instruct-q4f16_1-MLC';
+let lastToolSources=[];
 async function getLocalEngine(onProgress=()=>{}){
  if(localEngine)return localEngine;
  if(enginePromise)return enginePromise;
@@ -40,7 +41,39 @@ $('closeSettings').onclick=$('doneSettings').onclick=()=>$('settingsModal').clas
 $('model').onchange=()=>$('settingsModel').value=$('model').value;
 $('settingsModel').onchange=()=>$('model').value=$('settingsModel').value;
 document.querySelectorAll('.prompt-card').forEach(b=>b.onclick=()=>{input.value=b.dataset.prompt;input.focus();resize()});
+
 input.addEventListener('input',resize);
+const toolsTrigger=$('toolsTrigger'),toolsMenu=$('toolsMenu');
+toolsTrigger.onclick=()=>{const open=toolsMenu.hidden;toolsMenu.hidden=!open;toolsTrigger.setAttribute('aria-expanded',String(open))};
+document.addEventListener('click',e=>{if(!e.target.closest('.tools-menu-wrap')){toolsMenu.hidden=true;toolsTrigger.setAttribute('aria-expanded','false')}});
+async function runSelectedTools(promptText){
+ const context=[],sources=[];
+ if($('webSearchToggle').checked){
+  const r=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:promptText})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'Web search failed.');
+  context.push('WEB SEARCH RESULTS (Wikipedia):\\n'+d.results.map((x,i)=>(i+1)+'. '+x.title+'\\n'+x.extract+'\\nURL: '+x.url).join('\\n\\n'));
+  d.results.forEach(x=>sources.push({title:x.title,url:x.url}));
+ }
+ if($('pageReadToggle').checked){
+  const urls=promptText.match(/https?:\\/\\/[^\\s<>"']+/gi)||[];
+  if(!urls.length)throw new Error('For Read webpage, include a public http or https URL in your message.');
+  const target=urls[0].replace(/[),.]+$/,'');
+  const r=await fetch('/api/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not read that webpage.');
+  context.push('READ WEBPAGE: '+d.title+'\\nURL: '+d.url+'\\n'+d.text);
+  sources.push({title:d.title,url:d.url});
+ }
+ lastToolSources=sources;
+ return context.join('\\n\\n');
+}
+function showSources(bubble,sources){
+ if(!sources.length)return;
+ const box=document.createElement('div');box.className='tool-source-list';
+ const heading=document.createElement('b');heading.textContent='Sources used';box.append(heading);
+ sources.forEach(s=>{const a=document.createElement('a');a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ '+s.title;box.append(a)});
+ bubble.append(box);
+}
+
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
 $('chatForm').addEventListener('submit',async e=>{
  e.preventDefault();const content=input.value.trim();if(!content||busy)return;
@@ -48,12 +81,17 @@ $('chatForm').addEventListener('submit',async e=>{
  welcome.style.display='none';messagesEl.style.display='flex';messages.push({role:'user',content});addMessage('user',content);
  const bubble=addMessage('assistant','Connecting to NEXUS AI…');setStatus('Starting on-device AI…');
  try{
-  const engine=await getLocalEngine(progress=>{bubble.textContent='Preparing NEXUS on this device…\n'+progress;setStatus('Loading local model…')});
+  const toolEnabled=$('webSearchToggle').checked||$('pageReadToggle').checked;
+  let toolContext='';if(toolEnabled){bubble.textContent='Using selected tools…';toolContext=await runSelectedTools(content)}
+  const engine=await getLocalEngine(progress=>{bubble.textContent='Preparing NEXUS on this device…\\n'+progress;setStatus('Loading local model…')});
   bubble.textContent='NEXUS is thinking…';setStatus('Local model · Ready');
-  const result=await engine.chat.completions.create({messages:[{role:'system',content:'You are NEXUS, a helpful, thoughtful, age-appropriate AI assistant. Be accurate and clear. You are a compact on-device model; be honest about uncertainty and limitations. Never claim to browse or use tools unless that happened.'},...messages],temperature:.7,max_tokens:700});
+  const conversation=messages.slice(0,-1);
+  const systemPrompt='You are NEXUS, a helpful, thoughtful, age-appropriate AI assistant. Be accurate and clear. You are a compact on-device model; be honest about uncertainty and limitations. Never claim to browse or use tools unless that happened. If tool results are supplied, answer using them and mention relevant source names.';
+  const userPrompt=toolContext?'User request: '+content+'\\n\\nRetrieved public web information:\\n'+toolContext:content;
+  const result=await engine.chat.completions.create({messages:[{role:'system',content:systemPrompt},...conversation,{role:'user',content:userPrompt}],temperature:.7,max_tokens:700});
   const reply=result.choices?.[0]?.message?.content;
   if(typeof reply!=='string'||!reply.trim())throw new Error('The local model returned an empty response. Try a shorter message.');
-  bubble.textContent=reply;messages.push({role:'assistant',content:reply});saveChat();setStatus('Local model · Ready');
+  bubble.textContent=reply;showSources(bubble,lastToolSources);messages.push({role:'assistant',content:reply});saveChat();setStatus('Local model · Ready');
  }catch(err){
   bubble.textContent='NEXUS could not start the local model. '+err.message+'\n\nThe first setup downloads a small model to this browser. Keep this tab open and use a regular Safari tab (not Private Browsing).';
   setStatus('Local model needs attention');
