@@ -15,17 +15,18 @@ Vercel serverless functions are not a persistent WebSocket/WebRTC relay. Remote 
 1. Choose a domain/subdomain you control, such as `remote.example.com`, and a VPS provider that supports Docker and persistent storage.
 2. Point the DNS A/AAAA record to the VPS.
 3. Install Docker Engine and the Docker Compose plugin on the VPS.
-4. Configure a reverse proxy (Caddy or nginx) to provide valid HTTPS and WebSocket pass-through. Do not expose an unencrypted remote desktop service to the public internet.
-5. Review `config.json` and set the real public hostname. Mount it into MeshCentral's `meshcentral-data` directory according to the official MeshCentral Docker instructions.
-6. Start the service with `docker compose up -d`.
-7. Open the HTTPS hostname, create the initial administrator account, enable multi-factor authentication, and disable public account registration.
+4. Create a `.env` file containing `NEXUS_REMOTE_HOSTNAME=remote.yourdomain.com` (replace it with your real hostname). Make sure your DNS record points to the VPS.
+5. Create the persistent config folder and copy the template: `mkdir data` then `cp config.json data/config.json`. Edit `data/config.json` and replace `remote.example.com` with your real hostname. Keep `NewAccounts` disabled.
+6. Allow inbound TCP ports 80 and 443 on the VPS firewall, then start the service with `docker compose up -d`. The Compose file persists MeshCentral's configuration, certificates, and database in `./data`.
+7. Open the HTTPS hostname. Create the initial administrator account immediately; MeshCentral documents that the first account becomes the administrator. Enable multi-factor authentication and keep public account registration disabled.
 8. In the MeshCentral dashboard, create a device group for your personal Windows computer and download the official Windows agent from that dashboard.
 9. Run the agent installer locally on your own PC and approve the Windows security prompts. Confirm the PC appears in your device list.
 10. Open the device's Remote Desktop action from the browser dashboard. End the session with Disconnect when finished.
 
 Official documentation:
-- MeshCentral: https://meshcentral.com/
-- MeshCentral GitHub and deployment docs: https://github.com/Ylianst/MeshCentral
+- MeshCentral container deployment: https://docs.meshcentral.com/install/container/
+- MeshCentral quick start and first-admin setup: https://docs.meshcentral.com/install/quickstart/
+- MeshCentral configuration reference: https://docs.meshcentral.com/meshcentral/
 - Docker Compose: https://docs.docker.com/compose/
 
 ## Security checklist
