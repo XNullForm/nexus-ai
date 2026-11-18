@@ -1,6 +1,6 @@
 # NEXUS AI
 
-**Current version: 1.3.0**
+**Current version: 1.4.0**
 
 NEXUS is a mobile-friendly AI workspace with a compact open model running directly in the browser through WebLLM and WebGPU. No Hugging Face inference credits or cloud API key are required for chat.
 
@@ -21,7 +21,7 @@ NEXUS is a mobile-friendly AI workspace with a compact open model running direct
 
 ## Included
 
-- Responsive NEXUS 1.3.0 interface
+- Responsive NEXUS 1.4.0 interface
 - Local in-browser AI chat
 - Local conversation history and library
 - Public webpage text reader (this reader still fetches pages through the Vercel route)
@@ -29,3 +29,12 @@ NEXUS is a mobile-friendly AI workspace with a compact open model running direct
 ## Limitations
 
 This is an existing open model running locally, not a newly trained model or a copy of ChatGPT, Claude, or Gemini. The compact model can make mistakes and has limited reasoning ability. The webpage reader is separate from local chat and only extracts public page text. Browser automation, image understanding, voice, and cross-device sync are not included. Do not use this project to bypass school filters, monitoring, or device-management rules.
+
+
+## NEXUS Tools (1.4.0)
+
+The message composer has a Tools dropdown:
+- **Web search**: searches Wikipedia's public API and provides article extracts and source links to the local model. This is an encyclopedia search, not a full Google-style web search.
+- **Read webpage**: fetches readable text from the first public URL included in the message, using the existing server-side page reader.
+
+These tools do not control browser tabs, log into sites, submit forms, or bypass school/device restrictions. Search results require an internet connection; the language model itself runs locally.
