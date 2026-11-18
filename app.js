@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id);
 const input=$('prompt'),messagesEl=$('messages'),welcome=$('welcome');
-const MODEL='Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
-let messages=[],history=[],busy=false,activeView='chat',engine=null,enginePromise=null;
+
+let messages=[],history=[],busy=false,activeView='chat';
 try{history=JSON.parse(localStorage.getItem('nexus-history-v2')||'[]')}catch{}
 function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200)}
 function setStatus(s){$('modelStatus').innerHTML='<i></i> '+s}
@@ -15,19 +15,7 @@ function renderMessages(){messagesEl.innerHTML='';messages.forEach(m=>addMessage
 function loadChat(id){const c=history.find(x=>x.id===id);if(!c)return;messages=c.messages.slice();renderMessages();$('sidebar').classList.remove('open')}
 function reset(){messages=[];renderMessages();input.focus()}
 function switchView(v){activeView=v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$(v+'View').classList.add('active');document.querySelectorAll('.nav-link').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$('viewTitle').textContent=v==='reader'?'Web reader':v==='library'?'Library':'Chat';if(v==='library')renderLibrary();$('sidebar').classList.remove('open')}
-async function loadModel(){
- if(engine)return engine;
- if(enginePromise)return enginePromise;
- if(!navigator.gpu){throw new Error('This browser does not expose WebGPU. Try an up-to-date Safari or Chrome browser on a compatible device.')}
- enginePromise=(async()=>{
-  setStatus('Preparing local AI…');
-  const {CreateMLCEngine}=await import('https://esm.run/@mlc-ai/web-llm');
-  const instance=await CreateMLCEngine(MODEL,{initProgressCallback:p=>{const pct=Math.round((p.progress||0)*100);setStatus((p.text||'Downloading model')+' '+pct+'%')}});
-  engine=instance;setStatus('Local AI ready');toast('NEXUS is ready. Your AI runs on this device.');return engine;
- })();
- try{return await enginePromise}catch(err){enginePromise=null;setStatus('AI not loaded · Tap to retry');throw err}
-}
-$('modelStatus').onclick=async()=>{try{await loadModel()}catch(e){toast(e.message)}};
+$('modelStatus').onclick=()=>{$('settingsModal').classList.add('open')};
 function resize(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,180)+'px'}
 document.querySelectorAll('.nav-link').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 $('homeLink').onclick=e=>{e.preventDefault();switchView('chat')};
@@ -45,15 +33,17 @@ $('chatForm').addEventListener('submit',async e=>{
  e.preventDefault();const content=input.value.trim();if(!content||busy)return;
  busy=true;$('sendBtn').disabled=true;input.value='';resize();if(activeView!=='chat')switchView('chat');
  welcome.style.display='none';messagesEl.style.display='flex';messages.push({role:'user',content});addMessage('user',content);
- const bubble=addMessage('assistant','Loading the on-device AI model…');
+ const bubble=addMessage('assistant','Connecting to NEXUS AI…');setStatus('AI request running…');
  try{
-  const ai=await loadModel();bubble.textContent='Thinking…';
-  const response=await ai.chat.completions.create({messages:[{role:'system',content:'You are NEXUS, a helpful, accurate, thoughtful AI assistant. Be clear, friendly, and age-appropriate. Explain uncertainty. Do not claim to browse or use tools unless that happened.'},...messages],temperature:.7,max_tokens:1100});
-  const reply=response.choices?.[0]?.message?.content;
-  if(typeof reply!=='string'||!reply.trim())throw new Error('The local model returned an empty response. Try again.');
-  bubble.textContent=reply;messages.push({role:'assistant',content:reply});saveChat();
- }catch(err){bubble.textContent='NEXUS could not start the local AI. '+err.message+'\n\nTry opening the site in a browser with WebGPU support. The first model download also needs a stable internet connection and enough free device memory.';setStatus('Local AI unavailable')}
- finally{busy=false;$('sendBtn').disabled=false;input.focus()}
+  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,model:$('model').value})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data.error||'The AI service returned an error ('+r.status+').');
+  if(typeof data.reply!=='string'||!data.reply.trim())throw new Error('The AI service returned an empty response.');
+  bubble.textContent=data.reply;messages.push({role:'assistant',content:data.reply});saveChat();setStatus('Hugging Face API · Connected');
+ }catch(err){
+  bubble.textContent='NEXUS could not get a response. '+err.message+'\n\nCheck that HF_TOKEN is set in Vercel for Production and that it has “Make calls to Inference Providers” permission. Then redeploy.';
+  setStatus('AI service needs attention');
+ }finally{busy=false;$('sendBtn').disabled=false;input.focus()}
 });
 $('readerForm').addEventListener('submit',async e=>{
  e.preventDefault();const url=$('readerUrl').value.trim(),result=$('readerResult');
