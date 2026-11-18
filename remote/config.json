@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Ylianst/MeshCentral/master/meshcentral-config-schema.json",
+  "settings": {
+    "Cert": "remote.example.com",
+    "Port": 443,
+    "AliasPort": 443,
+    "RedirPort": 80,
+    "AgentPong": 300,
+    "TlsOffload": false,
+    "SelfUpdate": false,
+    "AllowFraming": false,
+    "WebRTC": true
+  },
+  "domains": {
+    "": {
+      "Title": "NEXUS Remote",
+      "Title2": "Secure remote access",
+      "NewAccounts": false,
+      "UserNameIsEmail": true,
+      "Auth": "回"
+    }
+  }
+}
